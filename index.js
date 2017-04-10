@@ -15,21 +15,21 @@ exports.handler = (event, context) => {
         }
         switch (event.request.type) {
             case "LaunchRequest":
-                launchOuputGenerator (context);
+                launchOuputGenerator (context, "Help");
             break;
 
             case "IntentRequest":
                 console.log (`INTENT REQUEST ${event.request.intent.name}`);
                 if (event.request.intent.name === "GetTrendingTopics") {
-                    intentOuputGenerator (context, event);
+                    intentOuputGenerator (context, event.request.intent.slots.website.value);
                 } else if (event.request.intent.name == "AMAZON.HelpIntent") {
-                    launchOuputGenerator (context);
+                    launchOuputGenerator (context, "Help");
                 } else if (event.request.intent.name == "AMAZON.StopIntent") {
-                    stopOutputGenerator (context);
+                    stopOutputGenerator (context, "Stop");
                 } else if (event.request.intent.name == "AMAZON.CancelIntent") {
-                    stopOutputGenerator (context);
+                    stopOutputGenerator (context, "Cancel");
                 } else {
-                    errorOutputGenerator (context);
+                    errorOutputGenerator (context, "Help");
                 }
             break;
 
@@ -49,10 +49,8 @@ exports.handler = (event, context) => {
 
 
 // Helpers
-intentOuputGenerator = (context, event) => {
-    var websiteName = event.request.intent.slots.website.value;
-    console.log ("Intent for website " + websiteName);
-    var endPoint = getEndPoint (websiteName);
+intentOuputGenerator = (context, cardTitle) => {
+    var endPoint = getEndPoint (cardTitle);
     console.log ("Endpoint is " + endPoint);
     var body = '';
     https.get (endPoint, (response) => {
@@ -66,7 +64,6 @@ intentOuputGenerator = (context, event) => {
                 titlesForSpeech.push(topic.title);
             }
 
-            var cardTitle = websiteName;
             var cardContent = titlesForCard.toString();   
 
             var pausedTopics = titlesForSpeech.toString().split(",").join("<break time='1s'/>");
@@ -80,9 +77,8 @@ intentOuputGenerator = (context, event) => {
 
 }
 
-launchOuputGenerator = (context) => {
+launchOuputGenerator = (context, cardTitle) => {
     console.log ("Inside Launch Output Generator");
-    var cardTitle = "Help";
     var cardContent = `Welcome to TechFeedy. One stop for your trending topics.  Now, which site you would like ? ${supportedSites} `;
     var speakContent = `<speak> ${cardContent} </speak>`;
 
@@ -91,8 +87,8 @@ launchOuputGenerator = (context) => {
 
 }
 
-errorOutputGenerator = (context) => {
-    var cardTitle = "Help";
+errorOutputGenerator = (context, cardTitle) => {
+    console.log ("Inside Error Output Generator");
     var cardContent = `I can only provide information for ${supportedSites}. Now, which site you would like ?`;
     var speakContent = `<speak> ${cardContent} </speak>`;
 
@@ -101,8 +97,7 @@ errorOutputGenerator = (context) => {
 
 }
 
-stopOutputGenerator = (context) => {
-    var cardTitle = "Stop";
+stopOutputGenerator = (context, cardTitle) => {
     var cardContent = `Good Bye`;
     var speakContent = `<speak> ${cardContent} </speak>`;
 
