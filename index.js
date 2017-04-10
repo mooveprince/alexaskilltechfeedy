@@ -57,15 +57,15 @@ intentOuputGenerator = (context, event) => {
         response.on ('data', (chunk) => { body += chunk});
         response.on ('end', () => {
             var topics = JSON.parse (body);
-            var titlesForCard = '';
+            var titlesForCard = "";
             var titlesForSpeech = [];
             for (var topic of topics) {
-                titlesForCard += `${topic.title} \n`;
+                titlesForCard += `${topic.title}. \n`;
                 titlesForSpeech.push(topic.title);
             }
 
             var cardTitle = websiteName;
-            var cardContent = titlesForCard.toString();
+            var cardContent = titlesForCard.toString();   
 
             var pausedTopics = titlesForSpeech.toString().split(",").join("<break time='1s'/>");
             var ssmlString = ssmlStringReplacer(pausedTopics);
