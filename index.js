@@ -26,6 +26,8 @@ exports.handler = (event, context) => {
                     launchOuputGenerator (context);
                 } else if (event.request.intent.name == "AMAZON.StopIntent") {
                     stopOutputGenerator (context);
+                } else if (event.request.intent.name == "AMAZON.CancelIntent") {
+                    stopOutputGenerator (context);
                 } else {
                     errorOutputGenerator (context);
                 }
