@@ -1,48 +1,29 @@
-// Sample event data
 module.exports = {
   "session": {
-    "new": true,
-    "sessionId": "amzn1.echo-api.session.[unique-value-here]",
+    "sessionId": "SessionId.5715b3e2-dd87-4059-a465-d267c0889d1b",
+    "application": {
+      "applicationId": "amzn1.ask.skill.b8e70fdd-424d-487d-9357-087b8c237697"
+    },
     "attributes": {},
     "user": {
-      "userId": "amzn1.ask.account.[unique-value-here]"
+      "userId": "amzn1.ask.account.AGKCB5I7UPC6ICHTCNIF5NVSALRFPTJZ62YLCSCVVJMUZW66YN4B2PUFKIW7H7YC2PDQACGSOQRG6IF7RE3ALSNGXSJEQ2G6R3BXMLGPUV4M6KDPYOVQSYGBOLALBXOHZWU4V3VHLBGM7EYP2FCMZEOSSGLIL6PST2OZWWOPSZN5R7TW3D7TYFE2PDDN54L4IVQ7K67OEUU325A"
     },
-    "application": {
-      "applicationId": "amzn1.ask.skill.[unique-value-here]"
-    }
+    "new": true
   },
-  "version": "1.0",
   "request": {
-    "locale": "en-US",
-    "timestamp": "2016-10-27T18:21:44Z",
     "type": "IntentRequest",
+    "requestId": "EdwRequestId.1f1bc23d-f0ec-4caa-8d25-2e436b38af40",
+    "locale": "en-US",
+    "timestamp": "2017-04-09T19:14:14Z",
     "intent": {
-      "name": "AMAZON.StopIntent",
+      "name": "GetTrendingTopics",
       "slots": {
         "website": {
           "name": "website",
-          "value": "tech Meme"
+          "value": "hacker news"
         }
-      }
-    },
-    "requestId": "amzn1.echo-api.request.[unique-value-here]"
-  },
-  "context": {
-    "AudioPlayer": {
-      "playerActivity": "IDLE"
-    },
-    "System": {
-      "device": {
-        "supportedInterfaces": {
-          "AudioPlayer": {}
-        }
-      },
-      "application": {
-        "applicationId": "amzn1.ask.skill.[unique-value-here]"
-      },
-      "user": {
-        "userId": "amzn1.ask.account.[unique-value-here]"
       }
     }
-  }
+  },
+  "version": "1.0"
 };

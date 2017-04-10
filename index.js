@@ -1,9 +1,6 @@
 var https = require ('https');
 
 var supportedSites = ['Hacker News', 'Tech Crunch', 'Tech Meme'];
-var launchOutput = `<speak> Welcome to TechFeedy. One stop for your trending topics.  Now, which site you would like ? ${supportedSites} </speak>`;
-var errorOutput = `<speak>I can only provide information for ${supportedSites}. Now, which site you would like ? </speak>`;
-var goodByeOutput = `<speak>Good Bye</speak>`;
 
 var hackerNewsEndpoint = "https://techfeedyservice.herokuapp.com/hackernews";
 var techCrunchEndpoint = "https://techfeedyservice.herokuapp.com/techcrunch";
@@ -18,63 +15,24 @@ exports.handler = (event, context) => {
         }
         switch (event.request.type) {
             case "LaunchRequest":
-                console.log(`LAUNCH REQUEST`);
-                context.succeed(
-                    generateResponse(
-                        buildSpeechletResponse(launchOutput, false),
-                        {}
-                    )
-                )
+                launchOuputGenerator (context);
             break;
 
             case "IntentRequest":
                 console.log (`INTENT REQUEST ${event.request.intent.name}`);
                 if (event.request.intent.name === "GetTrendingTopics") {
-                    var endPoint = getEndPoint (event.request.intent.slots.website.value, context);
-                    var body = '';
-                    https.get (endPoint, (response) => {
-                        response.on ('data', (chunk) => { body += chunk});
-                        response.on ('end', () => {
-                            var topics = JSON.parse (body);
-                            var titles = [];
-                            for (var topic of topics) {
-                                titles.push(topic.title);
-                            }
-                            var pausedTopics = titles.toString().split(",").join("<break time='1s'/>");
-                            var ssmlString = ssmlStringReplacer(pausedTopics);
-                            var output = `<speak> ${ssmlString} </speak>`;
-                            context.succeed(
-                            generateResponse(
-                                buildSpeechletResponse(output, true),
-                                {} )
-                            )
-                        })
-                    });
+                    intentOuputGenerator (context, event);
                 } else if (event.request.intent.name == "AMAZON.HelpIntent") {
-                    context.succeed(
-                        generateResponse(
-                            buildSpeechletResponse(launchOutput, false),
-                            {}
-                        )
-                    );
+                    launchOuputGenerator (context);
                 } else if (event.request.intent.name == "AMAZON.StopIntent") {
-                    context.succeed(
-                        generateResponse(
-                            buildSpeechletResponse(goodByeOutput, false),
-                            {}
-                        )
-                    );
+                    stopOutputGenerator (context);
+                } else {
+                    errorOutputGenerator (context);
                 }
-                else {
-                    context.succeed(
-                        generateResponse(
-                        buildSpeechletResponse(errorOutput, false),
-                        {} )
-                    );
-                }
+            break;
 
             case "SessionEndedRequest":
-                console.log(`SESSION ENDED REQUEST`)
+                console.log(`SESSION ENDED REQUEST`);
             break;
             default:
                 context.fail(`INVALID REQUEST TYPE: ${event.request.type}`);
@@ -89,22 +47,100 @@ exports.handler = (event, context) => {
 
 
 // Helpers
-buildSpeechletResponse = (outputText, shouldEndSession) => {
+intentOuputGenerator = (context, event) => {
+    var websiteName = event.request.intent.slots.website.value;
+    console.log ("Intent for website " + websiteName);
+    var endPoint = getEndPoint (websiteName);
+    console.log ("Endpoint is " + endPoint);
+    var body = '';
+    https.get (endPoint, (response) => {
+        response.on ('data', (chunk) => { body += chunk});
+        response.on ('end', () => {
+            var topics = JSON.parse (body);
+            var titlesForCard = '';
+            var titlesForSpeech = [];
+            for (var topic of topics) {
+                titlesForCard += `${topic.title} \n`;
+                titlesForSpeech.push(topic.title);
+            }
+
+            var cardTitle = websiteName;
+            var cardContent = titlesForCard.toString();
+
+            var pausedTopics = titlesForSpeech.toString().split(",").join("<break time='1s'/>");
+            var ssmlString = ssmlStringReplacer(pausedTopics);
+            var speakContent = `<speak> ${ssmlString} </speak>`;
+            
+            var cardResponse = buildCardResponse (cardTitle, cardContent);
+            finalResponse (context, speakContent, cardResponse, true );
+        });        
+    });
+
+}
+
+launchOuputGenerator = (context) => {
+    console.log ("Inside Launch Output Generator");
+    var cardTitle = "Help";
+    var cardContent = `Welcome to TechFeedy. One stop for your trending topics.  Now, which site you would like ? ${supportedSites} `;
+    var speakContent = `<speak> ${cardContent} </speak>`;
+
+    var cardResponse = buildCardResponse (cardTitle, cardContent);
+    finalResponse (context, speakContent, cardResponse, false );
+
+}
+
+errorOutputGenerator = (context) => {
+    var cardTitle = "Help";
+    var cardContent = `I can only provide information for ${supportedSites}. Now, which site you would like ?`;
+    var speakContent = `<speak> ${cardContent} </speak>`;
+
+    var cardResponse = buildCardResponse (cardTitle, cardContent);
+    finalResponse (context, speakContent, cardResponse, false );    
+
+}
+
+stopOutputGenerator = (context) => {
+    var cardTitle = "Stop";
+    var cardContent = `Good Bye`;
+    var speakContent = `<speak> ${cardContent} </speak>`;
+
+    var cardResponse = buildCardResponse (cardTitle, cardContent);
+    finalResponse (context, speakContent, cardResponse, true );      
+}
+
+finalResponse = (context, speakContent, cardResponse, shouldEndSession) => {
+    console.log ("Inside Final Response");
+    context.succeed(
+        generateResponse(
+            buildSpeechletResponse(speakContent, cardResponse, shouldEndSession),
+            {}
+        )
+    );
+}
+
+buildCardResponse = (cardTitle, cardContent) => {
+    console.log ("Inside build Card Response");
+    return {
+        "type" : "Simple",
+        "title" : cardTitle,
+        "content" : cardContent
+    };
+}
+
+buildSpeechletResponse = (outputText, cardDetails, shouldEndSession) => {
+    console.log ("Build Speech Response");
   return {
     outputSpeech: {
       type: "SSML",
       ssml: outputText
     },
-    card: {
-      type: "Simple",
-      title: "TechFeedy",
-      content: "Pulling the information from your favourite websites",
-    },
+    card: cardDetails,
     shouldEndSession: shouldEndSession
   }
 }
 
 generateResponse = (speechletResponse, sessionAttributes) => {
+  console.log ("Generate final Response");
   return {
     version: "1.0",
     sessionAttributes: sessionAttributes,
@@ -112,7 +148,7 @@ generateResponse = (speechletResponse, sessionAttributes) => {
   }
 }
 
-getEndPoint = (websiteName, context) => {
+getEndPoint = (websiteName) => {
     switch (websiteName) {
         case "hacker news":
             return hackerNewsEndpoint;
@@ -124,18 +160,11 @@ getEndPoint = (websiteName, context) => {
             return techCrunchEndpoint;
         
         default:
-            //throw "Invalid Website";  
-            //Below code should never gets executed as its not right intent
-            context.succeed(
-                generateResponse(
-                    buildSpeechletResponse(errorOutput, false),
-                    {} )
-                );
+            //Below code should never gets executed as its not right intent because of the slots we defined
+            throw "Invalid Website";  
     }
 }
 
 ssmlStringReplacer = (ssmlString) => {
-    ssmlString = ssmlString.replace(/&/g, ' and ');
-    return ssmlString;
-
+    return ssmlString.replace(/&/g, ' and ');
 }
